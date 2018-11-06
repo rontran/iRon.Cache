@@ -7,6 +7,10 @@
     <Authors>Ron Tran</Authors>
     <Description>A caching library for redis.</Description>
     <Copyright>Open Source</Copyright>
+    <PackageLicenseUrl>https://github.com/rontran/iRon.Cache/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/rontran/iRon.Cache</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rontran/iRon.Cache</RepositoryUrl>
+    <PackageTags>redis, cache, mongodb</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
