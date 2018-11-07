@@ -5,6 +5,7 @@ using System.Text;
 namespace iRon.Cache
 {
     public interface ICacheConfig {
+        bool Enabled { get; set; }
         DurationConfig Duration { get; set; }
         string Prefix { get; set; }
         string ConnectionString { get; set; }
@@ -13,6 +14,7 @@ namespace iRon.Cache
     {
         public string ConnectionString { get; set; }
         public string Prefix { get; set; }
+        public bool Enabled { get; set; }
         public DurationConfig Duration { get; set; } = new DurationConfig();
     }
 

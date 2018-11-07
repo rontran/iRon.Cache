@@ -12,122 +12,170 @@
     using iRon.Cache.Enums;
     using iRon.Cache.Interfaces;
     using iRon.Cache.MongoDb;
+    using Microsoft.Extensions.Options;
 
     public class CacheRepository<T> : ICacheRepository<T>
         where T : class
     {
         private readonly TimeSpan defaultTimeSpan;
-        private readonly ICacheConfig cacheConfig;
-        private StackExchangeRedisCacheClient client;
-        private IConnectionMultiplexer connectionMultiplexer;
+        private readonly CacheConfig cacheConfig;
+        private readonly StackExchangeRedisCacheClient client;
+        private readonly IConnectionMultiplexer connectionMultiplexer;
 
-        public CacheRepository(ICacheConfig cacheConfig)
+        public CacheRepository(IOptions<CacheConfig> cacheConfig)
         {
-            this.cacheConfig = cacheConfig;
-            this.connectionMultiplexer = ConnectionMultiplexer.Connect(cacheConfig.ConnectionString);
+            this.cacheConfig = cacheConfig.Value;
+            this.connectionMultiplexer = ConnectionMultiplexer.Connect(this.cacheConfig.ConnectionString);
             var settings = new JsonSerializerSettings
             {
                 // ContractResolver = new CustomResolver()
             };
             settings.Converters.Add(new BsonNullConverter());
             var serializer = new NewtonsoftSerializer(settings);
-            this.client = new StackExchangeRedisCacheClient(this.connectionMultiplexer, serializer, 0, cacheConfig.Prefix);
+            if (this.cacheConfig.Enabled)
+            {
+                this.client = new StackExchangeRedisCacheClient(this.connectionMultiplexer, serializer, 0, this.cacheConfig.Prefix);
+            }
             this.defaultTimeSpan = new TimeSpan(0, 0, 0);
         }
 
         public void Delete(string key)
         {
-            this.client.Remove(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.Remove(key);
         }
 
         public void DeleteAsync(string key)
         {
-            this.client.RemoveAsync(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAsync(key);
         }
 
         public void DeletePattern(string key)
         {
-            this.client.RemoveAll(this.client.SearchKeys(key));
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAll(this.client.SearchKeys(key));
 
         }
 
         public void DeletePatternAsync(string key)
         {
-            this.client.RemoveAllAsync(this.client.SearchKeys(key));
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAllAsync(this.client.SearchKeys(key));
         }
 
         public bool Exists(string key)
         {
-            return this.client.Exists(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.Exists(key); }
+            else
+            { return false; }
         }
 
         public Task<bool> ExistsAsync(string key)
         {
-            return this.client.ExistsAsync(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.ExistsAsync(key); }
+            else
+            {
+                return Task.FromResult<bool>(false);
+            }
         }
 
         public void FlushAll()
         {
-            this.client.FlushDb();
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.FlushDb();
         }
 
         public void FlushAllAsync()
         {
-            this.client.FlushDbAsync();
+            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.FlushDbAsync();
         }
 
         public T Get(string key)
         {
-            return this.client.Get<T>(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.Get<T>(key); }
+            else
+            {
+                return default(T);
+            }
         }
 
         public Task<T> GetAsync(string key)
         {
-            return this.client.GetAsync<T>(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                return this.client.GetAsync<T>(key);
+            }
+            else
+            {
+                return Task.FromResult<T>(default(T));
+            }
         }
 
         public IEnumerable<T> Gets(string key)
         {
-            return this.client.Get<IEnumerable<T>>(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                return this.client.Get<IEnumerable<T>>(key);
+            }
+            else
+            {
+                return default(IEnumerable<T>);
+            }
         }
 
         public Task<IEnumerable<T>> GetsAsync(string key)
         {
-            return this.client.GetAsync<IEnumerable<T>>(key);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                return this.client.GetAsync<IEnumerable<T>>(key);
+            }
+            else
+            {
+                return Task.FromResult<IEnumerable<T>>(default(IEnumerable<T>));
+            }
         }
 
         public void Set(string key, T entity)
         {
-            var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-            var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-            this.client.Add<T>(key, entity, timeSpan);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
+                if (attr != null && attr.Duration == Duration.NONE) return;
+                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                this.client.Add<T>(key, entity, timeSpan);
+            }
         }
 
         public void SetAsync(string key, T entity)
         {
-            var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-            var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-            this.client.AddAsync<T>(key, entity, timeSpan);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
+                if (attr != null && attr.Duration == Duration.NONE) return;
+                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                this.client.AddAsync<T>(key, entity, timeSpan);
+            }
         }
 
         public void Set(string key, IEnumerable<T> entity)
         {
-            var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-            var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-            this.client.Add<IEnumerable<T>>(key, entity, timeSpan);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
+                if (attr != null && attr.Duration == Duration.NONE) return;
+                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                this.client.Add<IEnumerable<T>>(key, entity, timeSpan);
+            }
         }
 
         public void SetAsync(string key, IEnumerable<T> entity)
         {
-            var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-            var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-            this.client.AddAsync<IEnumerable<T>>(key, entity, timeSpan);
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
+                if (attr != null && attr.Duration == Duration.NONE) return;
+                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                this.client.AddAsync<IEnumerable<T>>(key, entity, timeSpan);
+            }
         }
 
-        public bool IsConnected()
-        {
-            return this.connectionMultiplexer.IsConnected;
-        }
+        public bool IsConnected => connectionMultiplexer != null && this.connectionMultiplexer.IsConnected;
 
         private int GetDuration(Duration duration)
         {

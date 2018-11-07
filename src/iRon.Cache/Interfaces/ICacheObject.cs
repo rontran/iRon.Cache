@@ -7,11 +7,12 @@ namespace iRon.Cache.Interfaces
 {
     public interface ICacheRepository<T> where T:class
     {
+        void SetAsync(string key, IEnumerable<T> entity);
+        void Set(string key, IEnumerable<T> entity);
+        IEnumerable<T> Gets(string key);
         void Set(string key, T entity);
         void SetAsync(string key, T entity);
-        void Set(string key, IEnumerable<T> entity);
-        void SetAsync(string key, IEnumerable<T> entity);
-        bool IsConnected();
+        bool IsConnected { get; }
         T Get(string key);
         Task<T> GetAsync(string key);
         Task<IEnumerable<T>> GetsAsync(string key);
