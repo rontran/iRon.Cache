@@ -28,10 +28,8 @@ Edit appsettings.json and add
   }
 ```
 
-```
 Add cache duration to you entity objects:
-
+```
  [CacheDuration(iRon.Cache.Enums.Duration.HIGH)]
- public class JobTitleEntity 
-    
+ public class JobTitleEntity     
 ```
