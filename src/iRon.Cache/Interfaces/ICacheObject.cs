@@ -1,17 +1,18 @@
-﻿using System;
+﻿using iRon.Cache.Enums;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace iRon.Cache.Interfaces
 {
-    public interface ICacheRepository<T> where T:class
+    public interface ICacheRepository<T> where T : class
     {
-        void SetAsync(string key, IEnumerable<T> entity);
-        void Set(string key, IEnumerable<T> entity);
+        void SetAsync(string key, IEnumerable<T> entity, Duration? overrideDuration = null);
+        void Set(string key, IEnumerable<T> entity, Duration? overrideDuration = null);
         IEnumerable<T> Gets(string key);
-        void Set(string key, T entity);
-        void SetAsync(string key, T entity);
+        void Set(string key, T entity, Duration? overrideDuration = null);
+        void SetAsync(string key, T entity, Duration? overrideDuration = null);
         bool IsConnected { get; }
         T Get(string key);
         Task<T> GetAsync(string key);

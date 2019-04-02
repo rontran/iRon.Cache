@@ -25,15 +25,16 @@
         public CacheRepository(IOptions<CacheConfig> cacheConfig)
         {
             this.cacheConfig = cacheConfig.Value;
-            this.connectionMultiplexer = ConnectionMultiplexer.Connect(this.cacheConfig.ConnectionString);
-            var settings = new JsonSerializerSettings
-            {
-                // ContractResolver = new CustomResolver()
-            };
-            settings.Converters.Add(new BsonNullConverter());
-            var serializer = new NewtonsoftSerializer(settings);
+
             if (this.cacheConfig.Enabled)
             {
+                this.connectionMultiplexer = ConnectionMultiplexer.Connect(this.cacheConfig.ConnectionString);
+                var settings = new JsonSerializerSettings
+                {
+                    // ContractResolver = new CustomResolver()
+                };
+                settings.Converters.Add(new BsonNullConverter());
+                var serializer = new NewtonsoftSerializer(settings);
                 this.client = new StackExchangeRedisCacheClient(this.connectionMultiplexer, serializer, 0, this.cacheConfig.Prefix);
             }
             this.defaultTimeSpan = new TimeSpan(0, 0, 0);
@@ -131,46 +132,50 @@
             }
         }
 
-        public void Set(string key, T entity)
+        public void Set(string key, T entity, Duration? overrideDuration = null)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected)
             {
                 var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
                 if (attr != null && attr.Duration == Duration.NONE) return;
                 var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
                 this.client.Add<T>(key, entity, timeSpan);
             }
         }
 
-        public void SetAsync(string key, T entity)
+        public void SetAsync(string key, T entity, Duration? overrideDuration = null)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected)
             {
                 var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
                 if (attr != null && attr.Duration == Duration.NONE) return;
                 var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
                 this.client.AddAsync<T>(key, entity, timeSpan);
             }
         }
 
-        public void Set(string key, IEnumerable<T> entity)
+        public void Set(string key, IEnumerable<T> entity, Duration? overrideDuration = null)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected)
             {
                 var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
                 if (attr != null && attr.Duration == Duration.NONE) return;
                 var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
                 this.client.Add<IEnumerable<T>>(key, entity, timeSpan);
             }
         }
 
-        public void SetAsync(string key, IEnumerable<T> entity)
+        public void SetAsync(string key, IEnumerable<T> entity, Duration? overrideDuration = null)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected)
             {
                 var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
                 if (attr != null && attr.Duration == Duration.NONE) return;
                 var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
+                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
                 this.client.AddAsync<IEnumerable<T>>(key, entity, timeSpan);
             }
         }
