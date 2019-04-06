@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace iRon.Cache.Example.Controllers
 {
-    [CacheDuration(Enums.Duration.LOW)]
+    [CacheDuration(Enums.Duration.FOREVER)]
     public class UserEntity
     {
         public ObjectId Id { get; set; }

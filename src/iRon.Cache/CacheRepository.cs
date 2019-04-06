@@ -40,34 +40,26 @@
             this.defaultTimeSpan = new TimeSpan(0, 0, 0);
         }
 
-        public void Delete(string key)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.Remove(key);
-        }
-
+        
         public void DeleteAsync(string key)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAsync(key);
         }
 
-        public void DeletePattern(string key)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAll(this.client.SearchKeys(key));
-
-        }
-
+        
         public void DeletePatternAsync(string key)
         {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.RemoveAllAsync(this.client.SearchKeys(key));
+            if (client != null && this.cacheConfig.Enabled && IsConnected)
+            {
+                this.client.RemoveAllAsync(this.client.SearchKeys(key));
+            }
         }
 
-        public bool Exists(string key)
+        public Task<IEnumerable<string>> GetKeysAsync(string pattern)
         {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.Exists(key); }
-            else
-            { return false; }
+            return this.client.SearchKeysAsync(pattern);
         }
-
+        
         public Task<bool> ExistsAsync(string key)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.ExistsAsync(key); }
@@ -76,24 +68,10 @@
                 return Task.FromResult<bool>(false);
             }
         }
-
-        public void FlushAll()
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.FlushDb();
-        }
-
+                
         public void FlushAllAsync()
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected) this.client.FlushDbAsync();
-        }
-
-        public T Get(string key)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected) { return this.client.Get<T>(key); }
-            else
-            {
-                return default(T);
-            }
         }
 
         public Task<T> GetAsync(string key)
@@ -105,18 +83,6 @@
             else
             {
                 return Task.FromResult<T>(default(T));
-            }
-        }
-
-        public IEnumerable<T> Gets(string key)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected)
-            {
-                return this.client.Get<IEnumerable<T>>(key);
-            }
-            else
-            {
-                return default(IEnumerable<T>);
             }
         }
 
@@ -132,18 +98,6 @@
             }
         }
 
-        public void Set(string key, T entity, Duration? overrideDuration = null)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected)
-            {
-                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-                if (attr != null && attr.Duration == Duration.NONE) return;
-                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
-                this.client.Add<T>(key, entity, timeSpan);
-            }
-        }
-
         public void SetAsync(string key, T entity, Duration? overrideDuration = null)
         {
             if (client != null && this.cacheConfig.Enabled && IsConnected)
@@ -153,18 +107,6 @@
                 var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
                 if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
                 this.client.AddAsync<T>(key, entity, timeSpan);
-            }
-        }
-
-        public void Set(string key, IEnumerable<T> entity, Duration? overrideDuration = null)
-        {
-            if (client != null && this.cacheConfig.Enabled && IsConnected)
-            {
-                var attr = typeof(T).GetCustomAttribute<CacheDuration>(false);
-                if (attr != null && attr.Duration == Duration.NONE) return;
-                var timeSpan = attr == null ? this.defaultTimeSpan : new TimeSpan(0, 0, this.GetDuration(attr.Duration));
-                if (overrideDuration != null) timeSpan = new TimeSpan(0, 0, this.GetDuration(overrideDuration.GetValueOrDefault()));
-                this.client.Add<IEnumerable<T>>(key, entity, timeSpan);
             }
         }
 
